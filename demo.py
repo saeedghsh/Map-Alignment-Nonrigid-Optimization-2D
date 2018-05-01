@@ -22,7 +22,6 @@ import sys
 new_paths = [
     u'../arrangement/',
     u'../Map-Alignment-2D',
-    # u'../Map-Alignment-Nonrigid-Optimization-2D/lib/',
 ]
 for path in new_paths:
     if not( path in sys.path):
@@ -59,8 +58,9 @@ def _extract_target_file_name(img_src, img_dst, method=None):
 
     return tmp if method is None else method+'_'+ tmp
 
+
 ################################################################################
-######################################################################## 
+################################################################################ 
 ################################################################################
 if __name__ == '__main__':
     '''
@@ -73,17 +73,19 @@ if __name__ == '__main__':
     --hyp_sel_metric 'matchscore' # use arrangement matchscore for map alignemnt (sensor-layout and sensor-sensor)
 
     -visualize
-    -save_to_file
+    -save_to_file (also visualizes)
     -multiprocessing
 
     Examples:
     ---------
-    python demo.py --img_src 'map_sample/KPT4A_01.png' --img_dst 'map_sample/KPT4A_layout.png' --hyp_sel_metric 'fitness' -visualize -multiprocessing
+    python demo.py --img_src 'map_sample/F5_04.png' --img_dst 'map_sample/F5_layout.png' --hyp_sel_metric 'fitness' -visualize -multiprocessing
 
-    python demo.py --img_src 'map_sample/KPT4A_01.png' --img_dst 'map_sample/KPT4A_layout.png' --hyp_sel_metric 'matchscore' -visualize -save_to_file -multiprocessing
+    python demo.py --img_src 'map_sample/F5_04.png' --img_dst 'map_sample/F5_layout.png' --hyp_sel_metric 'matchscore' -visualize -save_to_file -multiprocessing
     '''
-    
-    print('__main__')
+
+    ################################################################################
+    ######################################################## INITIALIZATION from CLI
+    ################################################################################
     args = sys.argv
 
     ###### fetching options from input arguments
@@ -114,80 +116,6 @@ if __name__ == '__main__':
 
     if save_to_file: save_to_file = _extract_target_file_name(img_src, img_dst, method=None)
 
-else:
-    print('__else__')
-    map_list = [
-        '../Halmstad-Robot-Maps/maps/E5/layout/E5_layout.png', # 0
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_01.png', # 1
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_02.png', # 2
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_03.png', # 3
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_04.png', # 4
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_05.png', # 5
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_06.png', # 6
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_07.png', # 7
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_08.png', # 8
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_09.png', # 9
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_10.png', # 10
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_11.png', # 11
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_12.png', # 12
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_13.png', # 13
-        '../Halmstad-Robot-Maps/maps/E5/pseudo_occupancy/E5_14.png', # 14
-        
-        '../Halmstad-Robot-Maps/maps/F5/layout/F5_layout.png', # 15
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_01.png', # 16
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_02.png', # 17
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_03.png', # 18
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_04.png', # 19
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_05.png', # 20
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_06.png', # 21
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_07.png', # 22
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_08.png', # 23
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_09.png', # 24
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_10.png', # 25
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_11.png', # 26
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_12.png', # 27
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_13.png', # 28
-        '../Halmstad-Robot-Maps/maps/F5/pseudo_occupancy/F5_14.png', # 29
-        
-        '../Halmstad-Robot-Maps/maps/HIH/layout/HIH_layout.png', # 30
-        '../Halmstad-Robot-Maps/maps/HIH/pseudo_occupancy/HIH_01.png', # 31
-        '../Halmstad-Robot-Maps/maps/HIH/pseudo_occupancy/HIH_02.png', # 32
-        '../Halmstad-Robot-Maps/maps/HIH/pseudo_occupancy/HIH_03.png', # 33
-        '../Halmstad-Robot-Maps/maps/HIH/pseudo_occupancy/HIH_04.png', # 34
-        
-        '../Halmstad-Robot-Maps/maps/KPT4A/layout/KPT4A_layout.png', # 35
-        '../Halmstad-Robot-Maps/maps/KPT4A/pseudo_occupancy/KPT4A_01.png', # 36
-        '../Halmstad-Robot-Maps/maps/KPT4A/pseudo_occupancy/KPT4A_02.png', # 37
-        '../Halmstad-Robot-Maps/maps/KPT4A/pseudo_occupancy/KPT4A_03.png', # 38
-        '../Halmstad-Robot-Maps/maps/KPT4A/pseudo_occupancy/KPT4A_04.png' # 39
-    ]
-
-    ##### sensor to layout
-    img_src, img_dst = map_list[1], map_list[0]
-    img_src, img_dst = map_list[2], map_list[0] # <- corrected
-    # img_src, img_dst = map_list[5], map_list[0] # <- fails
-    # img_src, img_dst = map_list[11], map_list[0]
-    # img_src, img_dst = map_list[12], map_list[0]
-
-    # img_src, img_dst = map_list[9], map_list[0]
-    # img_src, img_dst = map_list[17], map_list[15] # <- fails
-
-    # img_src, img_dst = map_list[19], map_list[15] # <- corrected
-
-    ##### sensor to sensor
-    # img_src, img_dst = map_list[1], map_list[2]
-    # img_src, img_dst = map_list[2], map_list[1]
-
-    ##### HIH example
-    img_src, img_dst = map_list[31], map_list[30]
-
-    visualize = [False, True][1]
-    save_to_file = [False, True][0]
-    multiprocessing = [False, True][1]
-    hyp_sel_metric = ['fitness', 'matchscore'][0]
-    if save_to_file: save_to_file = _extract_target_file_name(img_src, img_dst, method=None)
-
-if 1:
     ################################################################################
     #################################################### FIRST STAGE - MAP ALIGNMENT
     ################################################################################
@@ -295,9 +223,7 @@ if 1:
     ########## print the elapsed time
     time_key = ['src_lnl_t', 'dst_lnl_t', 'src_arr_t', 'dst_arr_t', 'hyp_gen_t']
     print ('total alignment time: {:.5f}'.format( np.array([mapali_details[key] for key in time_key]).sum() ) )
-
     
-if 1:
     ################################################################################
     ####################################### SECOND STAGE - OPTIMIZATION OF ALIGNMENT
     ################################################################################
@@ -324,20 +250,20 @@ if 1:
     ########## POINT SAMPLING occupied cells (of the source image)
     ########################################
     opt_tic = time.time()
-    X_original = optali.get_corner_sample(src_results['image'],
-                                          edge_refine_dilate_itr=opt_config['edge_refine_dilate_itr'],
-                                          maxCorners=opt_config['max_corner'],
-                                          qualityLevel=opt_config['quality_level'],
-                                          minDistance=opt_config['min_distance'])
-    X_aligned = tform_align._apply_mat(X_original, tform_align.params)
+    X_original = optali.get_corner_sample( src_results['image'],
+                                           edge_refine_dilate_itr=opt_config['edge_refine_dilate_itr'],
+                                           maxCorners=opt_config['max_corner'],
+                                           qualityLevel=opt_config['quality_level'],
+                                           minDistance=opt_config['min_distance'])
+    X_aligned = tform_align._apply_mat( X_original, tform_align.params )
 
     ########################################
     ########### construction of MOTION FIELD (of the destination map)
     ########################################
-    fit_map, grd_map = optali.get_fitness_gradient(dst_results['image'],
-                                                   fitness_sigma=opt_config['fitness_sigma'],
-                                                   grd_k_size=opt_config['gradient_ksize'],
-                                                   normalize=True)
+    fit_map, grd_map = optali.get_fitness_gradient( dst_results['image'],
+                                                    fitness_sigma=opt_config['fitness_sigma'],
+                                                    grd_k_size=opt_config['gradient_ksize'],
+                                                    normalize=True)
 
     ########################################
     ################# data point correlation (for averaging motion)
@@ -347,14 +273,15 @@ if 1:
     ########################################
     ########################### Optimization
     ########################################
-    X_optimized, log = optali.optimize_alignment( X0=X_aligned, X_correlation=X_correlation,
-                                                gradient_map=grd_map, fitness_map=fit_map,
-                                                config=opt_config,
-                                                verbose=True)
+    X_optimized, optimization_log = optali.optimize_alignment( X0=X_aligned, X_correlation=X_correlation,
+                                                               gradient_map=grd_map, fitness_map=fit_map,
+                                                               config=opt_config,
+                                                               verbose=True)
     print ('total optimization time: {:.5f}'.format( time.time() - opt_tic ) )
 
     tform_opt = skimage.transform.PiecewiseAffineTransform()
     tform_opt.estimate(X_aligned, X_optimized)
+
     '''
     Note on how to generate X_aligned and X_optimized from tforms:
     print ( np.allclose(X_aligned , tform_align(X_original))  )
@@ -362,11 +289,7 @@ if 1:
     print ( np.allclose(X_optimized , tform_opt(X_aligned)) )
     '''
 
-    if 0:
-        ########## just saving the optimization log
-        np.save(_extract_target_file_name(img_src, img_dst, method=None)+'.npy', log)
-
-    elif visualize or save_to_file:
+    if visualize or save_to_file:
         ########################################
         ########### warpings of the source image
         ########################################
@@ -383,14 +306,15 @@ if 1:
 
         ########## save/plotting alignment, motion of points and optimized alignment
         optplt.plot_alignment_motion_optimized(dst_results['image'],
-                                              src_img_aligned, src_img_optimized, grd_map,
+                                               src_img_aligned, src_img_optimized, grd_map,
                                                X_aligned, X_optimized, save_to_file)
     
-        if save_to_file:
-            ########## saving results in a numpy file
-            np.save(save_to_file+'.npy',
-                    {'arr_match_score': arr_match_score,
-                     'X_original': X_original,
-                     'tform_align': tform_align,
-                     'tform_opt': tform_opt,
-                     'log': log})
+    if save_to_file:
+        ########## saving results in a numpy file
+        np.save(save_to_file+'.npy',
+                {'arr_match_score': arr_match_score,
+                 'X_original': X_original,
+                 'tform_align': tform_align,
+                 'tform_opt': tform_opt,
+                 'mapali_details': mapali_details,
+                 'optimization_log': optimization_log})

@@ -30,9 +30,13 @@ That package and its dependencies have to be installed too.
 
 Usage Example
 -------------
+Run this:
 ```shel
-python demo.py --img_src 'map_sample/KPT4A_01.png' --img_dst 'map_sample/KPT4A_layout.png' --hyp_sel_metric 'fitness' -visualize -save_to_file -multiprocessing
+python demo.py --img_src 'map_sample/F5_04.png' --img_dst 'map_sample/F5_layout.png' --hyp_sel_metric 'fitness' -visualize -save_to_file -multiprocessing
 ```
+And you should see this:
+![example](https://github.com/saeedghsh/Map-Alignment-Nonrigid-Optimization-2D/blob/master/docs/map_sample_F5_04__map_sample_F5_layout.png)
+
 
 Data Set
 --------

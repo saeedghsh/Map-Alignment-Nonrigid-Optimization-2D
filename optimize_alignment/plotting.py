@@ -137,6 +137,8 @@ def plot_aligned_optimized(dst_image,
 
     if save_to_file:
         plt.savefig(save_to_file+'.png', bbox_inches='tight')
+        plt.tight_layout()
+        plt.show()
 
     else:
         plt.tight_layout()
@@ -163,6 +165,8 @@ def plot_alignment_motion_optimized(dst_image, src_img_aligned, src_img_optimize
 
     if save_to_file:
         plt.savefig(save_to_file+'.png', bbox_inches='tight')
+        plt.tight_layout()
+        plt.show()
 
     else:
         plt.tight_layout()
