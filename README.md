@@ -40,7 +40,7 @@ And you should see this:
 
 Data Set
 --------
-A collection layout maps and sensor maps of four different environments are available at [this repository](https://github.com/saeedghsh/Halmstad-Robot-Maps).
+A collection of layout and sensor maps from four different environments are available in [this repository](https://github.com/saeedghsh/Halmstad-Robot-Maps).
 
 <!-- Region Segmentation Transfer -->
 <!-- ---------------------------- -->
