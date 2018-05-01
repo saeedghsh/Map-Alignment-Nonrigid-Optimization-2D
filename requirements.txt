@@ -1,0 +1,8 @@
+###### Requirements with Version Specifiers ######
+numpy >= 1.10.2
+scipy >= 0.19
+matplotlib >= 2.0
+scikit-image >= 0.12
+
+# cv2 >= 2.0
+
