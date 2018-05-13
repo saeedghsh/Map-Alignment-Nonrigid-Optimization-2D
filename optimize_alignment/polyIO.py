@@ -48,7 +48,7 @@ def load_poly_file(file_name):
             poly_dic[poly_type].append( np.array( [ [float(s.replace('\n', '')) for s in f_lines.pop(0).split(' ')]
                                                     for idx in range(n_vert) ] ))
             f_lines.pop(0) # list of vertices, range(1,n_vert)
-        
+
     return poly_dic
 
 ################################################################################
@@ -62,7 +62,7 @@ def save_poly_file(file_name, poly_dic):
     poly_dic: a dictionary with two keys: ['in', 'out']
     poly_dic['key']: the field to each key is a list of polygons
     each polygon is an ordered array of vertices [numpy.ndarray of shape (nx2)]
-        
+
 
     output [.poly format]
     --------------------
@@ -90,7 +90,7 @@ def save_poly_file(file_name, poly_dic):
     for poly_type in ['out', 'in']:
         for poly in poly_dic[poly_type]:
             n_vert = poly.shape[0]
-            
+
             # set first line of the section
             f.write( ' '.join( [str(n_vert), poly_type] )+'\n' )
 
@@ -125,12 +125,12 @@ def _convert_to_poly_dict(contours, only_save_one_out=False):
     for idx, poly in enumerate(poly_dic['out']):
         if cv2.contourArea(poly, oriented=True) < 0 :
             poly_dic['out'][idx] = np.flipud(poly)
-            
+
     # save only one 'out'
     if only_save_one_out:
         biggest_cnt_idx = np.argmax([c.shape[0] for c in poly_dic['out']])
         poly_dic['out'] = [ poly_dic['out'][biggest_cnt_idx] ]
-        
+
         # remove "in" polygons that are not inside any "out" polygon
         # this might happen because we migh have rejected an "out" polygon
         for idx in range(len(poly_dic['in'])-1,-1,-1):
@@ -140,8 +140,8 @@ def _convert_to_poly_dict(contours, only_save_one_out=False):
                 poly_dic['in'].pop(idx)
 
     # # check 'in' and 'out' polys have correct orientations
-    # for poly in poly_dic['out']: assert cv2.contourArea(poly, oriented=True) > 0 
-    # for poly in poly_dic['in']: assert cv2.contourArea(poly, oriented=True) < 0 
+    # for poly in poly_dic['out']: assert cv2.contourArea(poly, oriented=True) > 0
+    # for poly in poly_dic['in']: assert cv2.contourArea(poly, oriented=True) < 0
 
     return poly_dic
 
@@ -172,7 +172,7 @@ def _extract_contours(image,
     im2, contours, hierarchy = cv2.findContours(img_bin, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
     contours = [c[:,0,:] for c in contours]
 
-    ##### reject small 
+    ##### reject small
     if (min_vert is not None) or (min_area is not None):
         contours = _reject_small_contours(contours, min_vert, min_area)
 
@@ -195,7 +195,7 @@ def load_corresponding_polys_and_scale(image_name):
     dude_results_list = [fn for fn in os.listdir(dude_results_path) if fn[-4:]=='poly']
     pathes = [ mapali._create_mpath( load_poly_file(dude_results_path+poly_name)['out'][0] ) # assuming a single poly
                for poly_name in dude_results_list ]
-    
+
     ##### scaling the polys
     # original size
     main_poly = load_poly_file( image_name+'.poly' )['out'][0] # assuming a single poly in the list
@@ -205,7 +205,7 @@ def load_corresponding_polys_and_scale(image_name):
     verts = np.concatenate([p.vertices for p in pathes],axis=0)
     dx = verts[:,0].max() - verts[:,0].min()
     dy = verts[:,1].max() - verts[:,1].min()
-    
+
     scale = dX/dx # = dY/dy
     for p in pathes: p.vertices *= scale
 
@@ -229,16 +229,16 @@ def _visualize_save(image, poly_dic):
 
     # plot poly_dic['out']
     for idx, contour in enumerate(poly_dic['out']):
-        axes.text( contour[0,0], contour[0,1], 
+        axes.text( contour[0,0], contour[0,1],
                    'cnt-out{:d} / {:d}xVertices'.format(idx, contour.shape[0]),
-                   fontdict={'color':'b',  'size': 8})    
+                   fontdict={'color':'b',  'size': 8})
         axes.plot(contour[:,0], contour[:,1], 'b.-')
-    
+
     # plot poly_dic['in']
     for idx, contour in enumerate(poly_dic['in']):
-        axes.text( contour[0,0], contour[0,1], 
+        axes.text( contour[0,0], contour[0,1],
                    'cnt-in{:d} / {:d}xVertices'.format(idx, contour.shape[0]),
-                   fontdict={'color':'r',  'size': 8})    
+                   fontdict={'color':'r',  'size': 8})
         axes.plot(contour[:,0], contour[:,1], 'r.-')
 
 

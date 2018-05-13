@@ -43,12 +43,12 @@ def get_gradient(image, kernel_size=3) :
     # Calculate the x and y gradients using Sobel operator
     grad_x = cv2.Sobel(image,cv2.CV_32F,1,0,ksize=kernel_size)
     grad_y = cv2.Sobel(image,cv2.CV_32F,0,1,ksize=kernel_size)
-    
+
     ### Combine the two gradients
     # # only the magnitude
     # grad = cv2.addWeighted(np.absolute(grad_x), 0.5, np.absolute(grad_y), 0.5, 0)
 
-    # oriented 
+    # oriented
     # grad = np.stack( [grad_x, grad_y], axis=2) # dx, dy stacked
     grad = grad_x + 1j*grad_y # with complex value
 
@@ -64,16 +64,16 @@ def get_fitness_gradient(image, fitness_sigma=50, grd_k_size=3, normalize=True):
     4) gradient (fitness map)
 
     it only returns the last two maps
-    
+
     Parameters
     ----------
-    
+
     fitness_sigma (default: 50)
     defines how far the gradient (motion field) should extend from target
     points (occupied) also, the higher the sigma, the "milder" the gradient
     would be should "fitness_sigma" and "grid_res" be correlated? should
     they be equal?
-    
+
     grd_k_size (default: 3)
     the kernel size of sobel filter for gradient image
 
@@ -81,17 +81,17 @@ def get_fitness_gradient(image, fitness_sigma=50, grd_k_size=3, normalize=True):
     normalizes the outputs to 1
     '''
     [thr1, thr2] = 100, 255 # counting unexplored as open to get occupied points
-    
+
     ########## fitness and motion field construction
     ret, bin_img = cv2.threshold(image, thr1,thr2 , cv2.THRESH_BINARY) # cv2.THRESH_BINARY_INV)
     dis_map = cv2.distanceTransform(bin_img.astype(np.uint8), cv2.DIST_L2,  maskSize=cv2.DIST_MASK_PRECISE)
     fitness_map = gaussian( dis_map, s=fitness_sigma )
     gradient_map = get_gradient(fitness_map, kernel_size=grd_k_size)
-    
+
     if normalize:
         fitness_map /= fitness_map.max()
         gradient_map /= np.absolute(gradient_map).max()
-        
+
     return fitness_map, gradient_map
 
 
@@ -134,10 +134,10 @@ def convert_map_to_points(image,
     (occupied=0, unexplored=127, open=255)
 
     This method returns a 2d array of size Mx2
-    each row in the array is the (x,y - col,row) coordinate of the pixels that 
+    each row in the array is the (x,y - col,row) coordinate of the pixels that
     belong to either i) the edges of the open space, or ii) the occupied cells
     '''
-    
+
     if point_source=='occupancy':
         pts = np.roll( np.array(np.nonzero(image==np.min(image))).T, 1, axis=1 )
     elif point_source=='edge':
@@ -165,7 +165,7 @@ def get_contour_path(image,
     ### sort contours according to thier sizes
     areas = [cv2.contourArea(c) for c in contours_pts] # [c.shape[0] for c in contours_pts]
     contours_pts = [c for (a,c) in sorted(zip(areas,contours_pts),reverse=True)]
-    
+
     ### selecting the biggest contour
     # max_idx = [c.shape[0] for c in contours].index(max([c.shape[0] for c in contours]))
     # contour_pts = contours[max_idx]
@@ -180,24 +180,24 @@ def get_corner_sample(image,
                       edge_refine_dilate_itr= 5,
                       maxCorners=500, qualityLevel=0.01, minDistance=25):
     '''
-    for the description of the following parameters see cv2.goodFeaturesToTrack 
+    for the description of the following parameters see cv2.goodFeaturesToTrack
     maxCorners, qualityLevel, minDistance
 
     Note on the qualityLevel
     ------------------------
     for my sensor maps, and with minDistance=25
-    qualityLevel below 0.1 returns almost all corners, and the only criteria is 
+    qualityLevel below 0.1 returns almost all corners, and the only criteria is
     left to minDistance. In this configuration, the minDistance acts as the grid
     resolution from get_point_sample() method
     '''
 
     # with dilate_iterations=1 some border lines are missing.
     # hoping that cv2.goodFeaturesToTrack would take care of spacing I set
-    # dilate_iterations=3   
+    # dilate_iterations=3
     refined_edge = get_refined_edge(image, dilate_iterations=edge_refine_dilate_itr)
     corner_points = cv2.goodFeaturesToTrack(refined_edge, maxCorners, qualityLevel, minDistance)
     corner_points = corner_points.astype(np.int)[:,0,:]
-    
+
     return corner_points
 
 ################################################################################
@@ -215,7 +215,7 @@ def uniform_sampling_with_grid(data_points, grid_points, grid_res=None):
     distance to its closest data_point is less than a threshold.
     Finally "idx" is the index to the closest data_point of those grid_points whose
     closest data_point is less than a threshold
-    
+
     Note
     ----
     the "uniform-sampling" is not that uniform! needs pruning :D
@@ -234,11 +234,11 @@ def get_point_sample(image, data_points=None, grid_res=50, point_type=['edge','o
     coordinates, corresponding to edges/occupied pixels of the input image.
 
     furthermore, it superimposes a sparse grid on top of the image, and performs
-    some sort of uniform sampling of aforementioned edge/occupied points. This 
+    some sort of uniform sampling of aforementioned edge/occupied points. This
     sampling is provided in form of indices to aforementioned points
     '''
 
-    ########## extract the coordinate of occupied/or/edge points 
+    ########## extract the coordinate of occupied/or/edge points
     if data_points is None and point_type in ['edge','occupancy']:
         data_points = convert_map_to_points(image, point_source=point_type, edge_refine_dilate_itr=2)
     else:
@@ -260,12 +260,12 @@ def get_point_sample(image, data_points=None, grid_res=50, point_type=['edge','o
     x = np.arange((image.shape[1] % grid_res) // 2, image.shape[1], grid_res)
     y = np.arange((image.shape[0] % grid_res) // 2, image.shape[0], grid_res)
     xv, yv = np.meshgrid(x, y)
-    
+
     # these are pixel coordinates, unlikely to go above 65535! and definitly not negative!
     grid_points = np.stack( ( xv.reshape(xv.shape[0]*xv.shape[1]),
                               yv.reshape(yv.shape[0]*yv.shape[1]) ),
                             axis=1).astype(np.uint16).astype(np.int16)
-    
+
     ########## sampling
     data_points = data_points.astype(np.int16)
     sampling_idx = uniform_sampling_with_grid(data_points, grid_points)#, grid_res=grid_res)
@@ -281,7 +281,7 @@ def estimate_fitness(X, fitness_map):
     Input
     -----
     fitness_map: np.array 2D, essentially a gray-scale image
-    X: np.array 2D, a list of 2D points 
+    X: np.array 2D, a list of 2D points
 
     Output
     ------
@@ -293,7 +293,7 @@ def estimate_fitness(X, fitness_map):
     valid_mask = np.logical_and( np.logical_and(0<X[:,0], X[:,0]<fitness_map.shape[1]), # x in bound
                                  np.logical_and(0<X[:,1], X[:,1]<fitness_map.shape[1]) )# y in bound
     valid_idx = np.nonzero(valid_mask)[0]
-    
+
     fitness = np.zeros(X.shape[0])
     fitness[valid_idx] = fitness_map[X[valid_idx,1].astype(int), X[valid_idx,0].astype(int)]
     return fitness
@@ -319,12 +319,12 @@ def estimate_motion(X, gradient_map, X_corr_stacked):
     dX = np.array(np.zeros(X.shape[0]), dtype=complex)
     dX[valid_idx] = gradient_map[X_valid.astype(np.int)[:,1], X_valid.astype(np.int)[:,0]]
     dX = np.stack((dX.real, dX.imag), axis=1)
-    
+
     ########## weighted average
     # apply local coherency constratint average motions
     dX_stacked = np.stack([dX for _ in range(dX.shape[0])], axis=1)
     dX_constrained = (dX_stacked * X_corr_stacked).mean(axis=0) # hadamard-schur product
-    
+
     return dX_constrained, dX
 
 ################################################################################
@@ -345,7 +345,7 @@ def data_point_correlation(X, correlation_sigma=400, normalize=True):
     defines the scope of locallity
 
     normalize (default: True)
-    if True, the correlation matrix is normalized to (0,1), so the correlation 
+    if True, the correlation matrix is normalized to (0,1), so the correlation
     of a point with itself is 1. This is helpful so that it can be directly used
     as the weight in averaging point motions.
 
@@ -376,16 +376,16 @@ def double_fitness(src_img, dst_img,
     src_fit is the fitness of src_points to dst_fit_map
     des_fit is the fitness of dst_points to src_fit_map
 
-    
+
 
     moving src contour to dst:
     This doesn't work becasue tform_opt can't correctly transform all contour points
 
-    moving dst contour to src    
+    moving dst contour to src
     This has the same problem as the other way, but those destination points
     out of the convext of tform_opt tesselation's convex hull will map to (0,0)
-    but that is ok, because we don't care about them any way. However we still 
-    need the contour of src to filter out the other dest points that are inside 
+    but that is ok, because we don't care about them any way. However we still
+    need the contour of src to filter out the other dest points that are inside
     the convexhull of the tesselation and yet irrelavant because they are out of
     src contour
     '''
@@ -402,12 +402,12 @@ def double_fitness(src_img, dst_img,
 
     '''
     there is the problem of transforming X_dst_original to src_frame. Those
-    points out of the convex-hulll of `tform_opt._tesselation` are not 
+    points out of the convex-hulll of `tform_opt._tesselation` are not
     transformed predictibaly, so it's safest to exlude them all.
     But the problem is unless I transform them, I can't check their containment
     in the contours of source image...
     So, don't read much into this!
-    [un]fortunately the success detection (see note below) didn't work, so I 
+    [un]fortunately the success detection (see note below) didn't work, so I
     won't be using the [mis]fitness of X_dst anyway. I will be using fitness of
     X_src for map fusion
 
@@ -426,7 +426,7 @@ def double_fitness(src_img, dst_img,
     not_contained_idx = np.nonzero( np.logical_not( contained ) )[0]
     # those points of dst that are out the contours of src_img, are transformed
     # to a point  (e.g. [-1,-1] ) which is out of the boundary of "src_fit_map"
-    X_dst_in_src_frame[not_contained_idx,:] = [-1,-1] 
+    X_dst_in_src_frame[not_contained_idx,:] = [-1,-1]
 
     #################### computing the fitness of src and dst points
     src_fit = estimate_fitness(X=X_src_in_dst_frame, fitness_map=dst_fit_map)
@@ -441,7 +441,7 @@ def double_fitness(src_img, dst_img,
 def motion_decoherency(X_aligned, X_optimized, X_correlation):
     '''
     OBSOLETE
-    This does not consider the underlying transformation! It only works if the 
+    This does not consider the underlying transformation! It only works if the
     underlying tform is a Translation. For instance, if the underlying tform is
     rotation, all the motion might be coherent, yet the Euclidean distance of
     motions is non-zero
@@ -454,7 +454,7 @@ def motion_decoherency(X_aligned, X_optimized, X_correlation):
 ################################################################################
 def get_tform_per_point(tform):
     '''
-    This method takes a `PiecewiseAffineTransform` object and returns a list of 
+    This method takes a `PiecewiseAffineTransform` object and returns a list of
     `AffineTransform` objects. The output list is a subset of `tform.affines`.
     While `tform.affines` is a list of `AffineTransform` objects per each
     simplex in `tform._tesselation`, the output list is `AffineTransform`
@@ -554,7 +554,7 @@ def get_correlation_sigma(itreration,
     y = a*x + b
     y_min = a* x_min + b
     y_max = a* x_max + b
-    
+
     a = np.float(y_max - y_min)/ (x_max-x_min)
     b = y_min - a*x_min
     y = a*x + b
@@ -595,7 +595,7 @@ def optimize_alignment(X0, X_correlation, gradient_map, fitness_map, config, ver
     '''
 
     sigma_update_steps = [0, 1000][0] # if 0, won't update
-    
+
     ########################################
     ###################### optimization loop
     ########################################
@@ -623,13 +623,13 @@ def optimize_alignment(X0, X_correlation, gradient_map, fitness_map, config, ver
 
         # estimate motion
         dX_constrained, dX = estimate_motion(X, gradient_map, X_corr_stacked)
-        
+
         # estimate motion
         motion = dX_constrained * config['opt_rate']
         # motion = dX * config['opt_rate']
 
         max_motion = np.sqrt(motion[:,0]**2 + motion[:,1]**2).max()
-        
+
         # update point locations
         X += motion
 
@@ -637,7 +637,7 @@ def optimize_alignment(X0, X_correlation, gradient_map, fitness_map, config, ver
 
         # estimate fitness
         fitness = estimate_fitness(X, fitness_map).mean()
-        
+
         itr += 1
         maxed = itr >= config['max_itr']
         no_motion = max_motion < config['tol_mot']
@@ -645,7 +645,7 @@ def optimize_alignment(X0, X_correlation, gradient_map, fitness_map, config, ver
         if (maxed) or (no_motion) or (well_fit): break
 
     if save_for_animate: np.save('X_history.npy', X_history)
-        
+
     ########################################
     ######### reporting optimization results
     ########################################
@@ -681,7 +681,7 @@ def optimize_alignment(X0, X_correlation, gradient_map, fitness_map, config, ver
                    log['motion'][0], log['motion'][1],
                    log['fitness'][0], log['fitness'][1])
         print ( termination_message )
-    
+
     X_optimized = X.copy()
     return X_optimized, log
 
@@ -695,14 +695,14 @@ def find_intersection(A,B):
     which is a pattern matching of 2-sequence entry between input arrays
     a pair of sequential points corresponds to a line
     the objective is to find if there is a line contained by both input arrays
-    
 
-    A,B are two numpy 2d.arrays 
+
+    A,B are two numpy 2d.arrays
     A = [ (p1x,p1y), (p2x,p2y), ...] , B = ...
-    
+
     This method searches for matching PAIRS OF POINTS
-    The output is a list of [(p(i)_x, p(i)_y), (p(i+1)_x,p(i+1)_y)] that are 
-    present in both A and B 
+    The output is a list of [(p(i)_x, p(i)_y), (p(i+1)_x,p(i+1)_y)] that are
+    present in both A and B
 
     note that the input to this method is the vertices array of a mpath
     this means first point is repeated at the end and end-to-first is accounted
@@ -756,7 +756,7 @@ def detect_border_lines(pathes):
     since the direction of pathes is always CCW:
     one of the pathes must be reversed for a successful template match
     '''
-    border_lines = []    
+    border_lines = []
     for path_a, path_b in itertools.combinations(pathes, 2):
         intersection = find_intersection(A=path_a.vertices, B= np.flip(path_b.vertices,axis=0) )
         border_lines += intersection
@@ -775,13 +775,13 @@ def rasterize_region_segments(pathes, image_shape, ogm=None):
     ogm: np.2darray (bitmap image )
     the occupancy grid map for "regseg transfer"
     If "ogm" is None, it is assumed the open space of the map corresponds to the
-    union of the pathes. This is the case where the objective is to just 
+    union of the pathes. This is the case where the objective is to just
     rasterize the region segmentaitions from pathes.
-    If "ogm" is provided, it is assumed the open space of the map does not 
+    If "ogm" is provided, it is assumed the open space of the map does not
     correspond to the union of the pathes. This is the case where the objective
     is to transfere the region segmentation from one map to another
-    IMPORTNT NOTE: regardless of whether "pathes" and "ogm' are from the same 
-    original map or not, they must be in the same frame of references. I.e. the 
+    IMPORTNT NOTE: regardless of whether "pathes" and "ogm' are from the same
+    original map or not, they must be in the same frame of references. I.e. the
     "ogm" must have been transfered to the frame of reference of the map which
     yielded the set of "pathes"
 
@@ -789,7 +789,7 @@ def rasterize_region_segments(pathes, image_shape, ogm=None):
     rasterized np.2darray
     has the same size as "image_shape"
     its dtype is uint
-    labels zero is for unlabeled areas (occupied and unexplored) and the 
+    labels zero is for unlabeled areas (occupied and unexplored) and the
     segmented regions have labels from 1 to len(pathes)
     '''
     rasterized = np.zeros(image_shape, dtype=np.uint16)
@@ -816,7 +816,7 @@ def rasterize_region_segments(pathes, image_shape, ogm=None):
 def detect_defect_in_label_image(label_image, occupancy_image,
                                  region_min_size=2000):
     '''
-    This method is specifically designed for detecting two types of errors in 
+    This method is specifically designed for detecting two types of errors in
     labels images where the region segmentation is from another map.
     For further explanation see the regseg transfer in:
         rasterize_region_segments()
@@ -825,16 +825,16 @@ def detect_defect_in_label_image(label_image, occupancy_image,
 
     error type 2: src/dst mis-alignment
     there could be pixels belonging to openspaces of the occupancy map that are
-    assigned label 0. This happens due to mis-alignment of src-dst and some 
-    unlabeled regions of dst map overlap some open spaces of the src map and 
+    assigned label 0. This happens due to mis-alignment of src-dst and some
+    unlabeled regions of dst map overlap some open spaces of the src map and
     prevent the openspaces of src map to receive any label other than 0.
 
 
     assumption:
     label==0 -> unlabeled regions (occupied or unxplored)
 
-    output 
-    2darrany 
+    output
+    2darrany
     boolian with the same size as the input images
     those whose labels are assumed to be correct have False flag,
     those whose labels are detected as defective are flagged True
@@ -848,13 +848,13 @@ def detect_defect_in_label_image(label_image, occupancy_image,
 
     # masking those regions smaller than a threshold as false label
     small_region_labels = labels_count[ np.argwhere( labels_count[:,1]<region_min_size ), 0][:,0]
-    
+
     # pixels belonging to small regions are flagged (set to True)
     defective_mask = np.full(label_image.shape, fill_value=False)
     for srl in small_region_labels: defective_mask = np.logical_or( label_image == srl, defective_mask)
     # defective_mask = np.any( anp.stack([label_image == srl for srl in small_region_labels], axis=2), axis=2)
 
-    ########## detection of error type 1    
+    ########## detection of error type 1
     # those pixels that are assinged label==0 due to mis-alignment of src/dst
     label_missing_mask = np.logical_and( occupancy_image>200, label_image==0)
     defective_mask = np.logical_or( label_missing_mask, defective_mask)
@@ -865,7 +865,7 @@ def detect_defect_in_label_image(label_image, occupancy_image,
 ################################################################################
 def propagate_labels(defective_mask, defective_label_image, sequenced_labels=True):
     '''
-    this method 
+    this method
 
     '''
     ####################################
@@ -903,8 +903,8 @@ def propagate_labels(defective_mask, defective_label_image, sequenced_labels=Tru
 ################################################################################
 def get_labeled_skiz_n_transition_points(img, labeled_img, max_dis=1):
     '''
-    extract the skiz of the input image (img) and convert then to point 
-    coordinates. then find their corresponding labels from the second input 
+    extract the skiz of the input image (img) and convert then to point
+    coordinates. then find their corresponding labels from the second input
     image (labeled_img)
 
     inputs
@@ -923,8 +923,8 @@ def get_labeled_skiz_n_transition_points(img, labeled_img, max_dis=1):
 
     outputs
     -------
-    skiz_pts: numpy.2darray 
-    coordinate of points on the skiz 
+    skiz_pts: numpy.2darray
+    coordinate of points on the skiz
 
     skiz_pts_labels: numpy.1darray
     region labels of points in skiz_pts, read from labeled_img
@@ -934,7 +934,7 @@ def get_labeled_skiz_n_transition_points(img, labeled_img, max_dis=1):
     ##### extract skiz in bitmap form
     thr = 200 #unexplored = occupied
     _, img_bin = cv2.threshold(img.astype(np.uint8), thr, 255 , cv2.THRESH_BINARY)
-    
+
     img_skiz = mapali._skiz_bitmap(img_bin, invert=False, return_distance=False)
 
     ##### convert skiz bitmap to coordinates and fetch their labels
@@ -948,7 +948,7 @@ def get_labeled_skiz_n_transition_points(img, labeled_img, max_dis=1):
         pts_lbl_0 = skiz_pts[ np.nonzero(skiz_pts_labels==lbl_0)[0], :]
         pts_lbl_1 = skiz_pts[ np.nonzero(skiz_pts_labels==lbl_1)[0], :]
         dists = scipy.spatial.distance.cdist(pts_lbl_0, pts_lbl_1)
-    
+
         brd_pts_idx_0, brd_pts_idx_1 = np.nonzero( dists <= max_dis )
         if brd_pts_idx_0.shape[0] > 0 :
             # pts_lbl_0[brd_pts_idx_0,:] -> skiz points with (label==lbl_0) that are near skiz points with (label==lbl_1)
@@ -986,14 +986,14 @@ def merge_transition_points(transition_points, max_dist=20):
 
     mt_pts_arr (np.2darray Nx2)
     all points in value fields of mt_pts_dic, compiled into a numpy array
- 
+
 
     description
     -----------
     clustering all border points close to each other, while keeping an eye for
     regions with two transition points. Clustering of the points is done by
     thresholding their distance after sorting them. It is assumed that the
-    threshold between intra-cluster and inter-cluster distance can be safely 
+    threshold between intra-cluster and inter-cluster distance can be safely
     set to 20 for instance.
     '''
 
@@ -1014,20 +1014,20 @@ def merge_transition_points(transition_points, max_dist=20):
         # NOTE: in "np.lexsort" last key set in the tuple is the primary
         pts_sort_idx = np.lexsort( (pts[:,1], pts[:,0]) )
         pts_sorted = pts[pts_sort_idx, :]
-        
+
         # find the distance between consecutive poitns in pts_sorted
         # and find consecutive points with a distance more than max_dist
         pt2pt_distance = np.sqrt((np.diff( pts_sorted, axis=0 )**2).sum(axis=1))
         split_idx = np.nonzero( pt2pt_distance > max_dist )[0]
-        
+
         # represent the array of all transition points with a list of single points
         mt_pts_dic[key] = [cluster.mean(axis=0) for cluster in np.split( pts_sorted, split_idx+1)]
-    
+
     mt_pts_arr = np.array([ pt for pts in mt_pts_dic.values() for pt in pts ])
     # print('pts_arr: \t', np.any(np.isnan(mt_pts_arr)))
 
-        
-        
+
+
     return mt_pts_dic, mt_pts_arr
 
 ################################################################################
@@ -1037,12 +1037,12 @@ def segmentation_with_transition_points(img, transition_points,
     '''
     for a more comprehensive inline comments see:
     segmentation_with_transition_points__single_iteration()
-    which is obsolete now, but kept it for comments   
+    which is obsolete now, but kept it for comments
 
     inputs
     ------
     img: np.2darray (h x w)
-    original occupancy maps 
+    original occupancy maps
 
     transition_points: np.2darray (N x 2)
 
@@ -1071,24 +1071,24 @@ def segmentation_with_transition_points(img, transition_points,
         and fix it with watershed
         '''
         dummy_label = marker.max()+1 # false label for unexplored area
-        
+
         # detect defectives and add them to zeros, for watershed to add marker
         defective_labels_mask = detect_defect_in_label_image(marker, img, region_min_size)
         marker = np.where(defective_labels_mask, 0, marker)
-        
+
         # "watershed" won't leave any pixel unlabeled. Inevitably one region will grow to
         _, img_bin = cv2.threshold(img.astype(np.uint8), thr, 255 , cv2.THRESH_BINARY)
         watershed_marker = np.where(img_bin==0, dummy_label, marker )
-        
+
         # "watershed" is stupid! it wants a 3-channel image!
         watershed_image = np.stack( [ img_bin.astype(np.uint8) for _ in range(3) ], axis=2)
         watershed_marker = cv2.watershed(watershed_image, watershed_marker)
-        
+
         # {0}: unlabeled regions
         # {1,...}: labels of different regions
         marker = np.where( np.logical_or(watershed_marker==-1, watershed_marker==dummy_label), 0, watershed_marker)
         return marker
-    ########################################        
+    ########################################
     ########################################
     ########################################
 
@@ -1096,7 +1096,7 @@ def segmentation_with_transition_points(img, transition_points,
     ########## padding binary image with circles at transition points
     thr = 200 # for binarization: unexplored = occupied
 
-    # get distance map for the radius of the circles 
+    # get distance map for the radius of the circles
     _, img_bin = cv2.threshold(img.astype(np.uint8), thr, 255 , cv2.THRESH_BINARY)
     img_dis = cv2.distanceTransform(img_bin, cv2.DIST_L2,  maskSize=cv2.DIST_MASK_PRECISE)
 
@@ -1104,7 +1104,7 @@ def segmentation_with_transition_points(img, transition_points,
     img_padded = img.copy()
     img_padded = cv2.erode(img_padded, np.ones((3,3),np.uint8), iterations = 5)
 
-    # sorting all circles (cent,rad) 
+    # sorting all circles (cent,rad)
     center_radius = { (int(pt[0]), int(pt[1])): int( img_dis[ int(pt[1]), int(pt[0])] )
                       for pt in transition_points if int( img_dis[ int(pt[1]), int(pt[0])] ) > 1 }
     sorted_keys = sorted(center_radius.keys(), key=lambda k: center_radius[k], reverse=True)
@@ -1115,8 +1115,8 @@ def segmentation_with_transition_points(img, transition_points,
     # first round of creating marker: in presence of erosion and all circles
     # markers are created here, and updated in the following iterations
 
-    # padding with all circles 
-    img_circled = img_padded.copy()        
+    # padding with all circles
+    img_circled = img_padded.copy()
     for (x,y), r in center_radius.iteritems():
         cv2.circle(img_circled, center=(x,y), radius=r, color=0, thickness=-1)
 
@@ -1134,7 +1134,7 @@ def segmentation_with_transition_points(img, transition_points,
         center_radius.pop( sorted_keys.pop(0) )
 
         # padding with circles
-        img_circled = img_padded.copy()        
+        img_circled = img_padded.copy()
         for (x,y), r in center_radius.iteritems():
             cv2.circle(img_circled, center=(x,y), radius=r, color=0, thickness=-1)
 
@@ -1144,7 +1144,7 @@ def segmentation_with_transition_points(img, transition_points,
     ########## last round to recover erosion
     ########################################
     markers = iterate(img, markers, region_min_size)
-        
+
     ########################################
     ######### storing results in the out put
     ########################################
@@ -1156,7 +1156,7 @@ def segmentation_with_transition_points(img, transition_points,
         for new_label, label in enumerate( np.unique(label_image) ):
             tmp = np.where(label_image==label, new_label, tmp)
         label_image = tmp
-    
+
     return label_image
 
 
@@ -1170,7 +1170,7 @@ def segmentation_with_transition_points__single_iteration(img, transition_points
     inputs
     ------
     img: np.2darray (h x w)
-    original occupancy maps 
+    original occupancy maps
 
     transition_points: np.2darray (N x 2)
 
@@ -1191,7 +1191,7 @@ def segmentation_with_transition_points__single_iteration(img, transition_points
     ########## padding binary image with circles at transition points
     thr = 200 # for binarization: unexplored = occupied
 
-    # get distance map for the radius of the circles 
+    # get distance map for the radius of the circles
     _, img_bin = cv2.threshold(img.astype(np.uint8), thr, 255 , cv2.THRESH_BINARY)
     img_dis = cv2.distanceTransform(img_bin, cv2.DIST_L2,  maskSize=cv2.DIST_MASK_PRECISE)
 
@@ -1241,23 +1241,23 @@ def segmentation_with_transition_points__single_iteration(img, transition_points
     propagate labels to "unlabeld" and "open-cells" from closest labeled pixels with
     watershed which won't cross occupancy barriers. this fixes the problem of corners
     inheriting labels from neighboring room.
-    
-    The problem is where a big circle is reaching a doorway, it allows the label of 
+
+    The problem is where a big circle is reaching a doorway, it allows the label of
     the room to extend to hall/corridor area '''
-    # src_mrk is the a copy of connected components labels, expect defective labels 
+    # src_mrk is the a copy of connected components labels, expect defective labels
     # are set to zero, ie unlabeled, to be "watershed"
     # note that small regions are removed here, so labels are NOT complete, ie. it
     # CAN be [0,2,3..] where 1 is missing
     con_com_marker = np.where(defective_labels_mask, 0, con_com_marker)
-    
+
     # "watershed" won't leave any pixel unlabeled. Inevitably one region will grow to
     # cover the unexplored regions. So dedicate a new label to occupied/unexploted
-    # areas (src_bin==0) then reject the label from "marker" later 
+    # areas (src_bin==0) then reject the label from "marker" later
     # in watershed_marker here -> {0}:unlabeled, {1,...,fl-1}:connectected component labels, fl:unexplored area
     # note that labels are NOT complete, ie. it CAN be [0,2,3..] where 1 is missing
     dummy_label = con_com_marker.max()+1 # false label for unexplored area
     watershed_marker = np.where(img_bin==0, dummy_label , con_com_marker )
-    
+
     # "watershed" is stupid! it wants a 3-channel image!
     watershed_image = np.stack( [ img_bin.astype(np.uint8) for _ in range(3) ], axis=2)
     # watershed_marker here (labels are NOT complete, CAN be [0,2,3..] where 1 is missing):
@@ -1277,7 +1277,7 @@ def segmentation_with_transition_points__single_iteration(img, transition_points
         for new_label, label in enumerate( np.unique(label_image) ):
             tmp = np.where(label_image==label, new_label, tmp)
         label_image = tmp
-    
+
     return label_image
 
 ################################################################################
@@ -1296,7 +1296,7 @@ def label_map_with_pathes(img, pathes):
         lbl_img[ xy[contained_idx,1], xy[contained_idx,0] ] = p_idx +1
 
     return lbl_img
-    
+
 ################################################################################
 def extract_pathes_from_label_image(label_image, dilate_itr=0):
     '''
@@ -1407,15 +1407,15 @@ def transfer_region_segmentation(src_image, dst_pathes, config, dst_image_shape=
     # src_skiz_pts_in_dst_frame = skiz_pts
     # src_skiz_pts_labels = skiz_lbl
 
-    ########## transform transition points to src frame    
+    ########## transform transition points to src frame
     src_transition_points = { key: config['tform_align'].inverse( config['tform_opt'].inverse( pts ) )
                               for key,pts in src_transition_points_in_dst_frame.iteritems() }
-    
+
     src_mt_pts_dict, src_mt_pts = merge_transition_points(src_transition_points, max_dist=config['max_dist'])
 
     ########## generating region segmentation from transition points [in src frame]
     src_labeled = segmentation_with_transition_points(src_image, src_mt_pts, region_min_size=config['region_min_size'])
-    
+
     return src_labeled
 
 
@@ -1426,12 +1426,12 @@ def transfer_region_segmentation(src_image, dst_pathes, config, dst_image_shape=
 #     '''
 #     this is a very simple peak detection method
 #     1) it assumes the signal is periodic
-#     2) the only criterial for a point to be peak is to be bigger/smaller than all 
+#     2) the only criterial for a point to be peak is to be bigger/smaller than all
 #     its neighbors
 
 #     Additional criterion: maximum number of peaks
 #     '''
-    
+
 #     nieghbors = np.stack([np.roll(x, r) for r in range(-win_siz,win_siz+1)], axis=0)
 
 #     if peak =='max':
@@ -1444,7 +1444,7 @@ def transfer_region_segmentation(src_image, dst_pathes, config, dst_image_shape=
 #     if max_peak_n is not None and idx.shape[0] > max_peak_n:
 #         srt_idx = np.argsort(x[idx])
 #         if peak =='max': srt_idx = np.flip(srt_idx, axis=0)
-#         idx = idx[ srt_idx[:max_peak_n] ]    
+#         idx = idx[ srt_idx[:max_peak_n] ]
 
 #     return idx
 
@@ -1458,18 +1458,18 @@ def transfer_region_segmentation(src_image, dst_pathes, config, dst_image_shape=
 # def point2segment_distance_1p1s(segment, p):
 #     '''
 #     1p1s: 1-point 1-segment version
-    
+
 #     '''
 
 #     p2p_distance = lambda p1, p2: np.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
 #     p1 = segment[0] # (x,y)
 #     p2 = segment[1]
-    
+
 #     seg_len = p2p_distance(p1, p2)
 #     d = np.dot( p-p1 , p2-p1) /np.abs( seg_len )**2
 #     px = p1 + ((p2-p1) * d)
-    
+
 #     xMin, xMax = min([p1[0], p2[0]]), max([p1[0], p2[0]])
 #     yMin, yMax = min([p1[1], p2[1]]), max([p1[1], p2[1]])
 #     eps = np.spacing(10)
@@ -1477,7 +1477,7 @@ def transfer_region_segmentation(src_image, dst_pathes, config, dst_image_shape=
 #         d1 = p2p_distance(p1,px)
 #         d2 = p2p_distance(p2,px)
 #         px = p1 if d1<d2 else p2
-        
+
 #     return p2p_distance( px, p) # point to segment distance
 
 
@@ -1485,19 +1485,19 @@ def transfer_region_segmentation(src_image, dst_pathes, config, dst_image_shape=
 # def point2segment_distance_mp1s(segment, pts):
 #     '''
 #     mp1s: multi-points 1-segment version
-    
-#     Input 
+
+#     Input
 #     -----
 #     segment: np.array 2d
 #     segment[0,:]=p1, segment[1,:]=p2
 
 #     pts: np.array 2d
 #     first index, is index to points, second index is index to x,y
-    
+
 #     output
 #     ------
 #     distances: np.array - 1d
-    
+
 #     How it works
 #     ------------
 #     projection of a point "p" on line (not segment) defined by "p1, p2"  is
@@ -1508,36 +1508,36 @@ def transfer_region_segmentation(src_image, dst_pathes, config, dst_image_shape=
 #     v1, v2 = v(p1, point), v(p1,p2)
 #     p1_2_prj_dis := distance of p1 to projection of point on v2
 #     p1_2_prj_dis = dot(v1, v2) / len(v2)^2
-    
+
 #     to find the distance of the point to segment, we have to check if the
-#     projected point is insided the interval of the segment, otherwise return 
+#     projected point is insided the interval of the segment, otherwise return
 #     the distance to the one ending point of the segment that is closer to the
 #     peojected point.
-    
+
 #     Vectorization speed-up
 #     ----------------------
-#     this method takes ~0.37% as much time as 1p1s version for 10000 points, 
+#     this method takes ~0.37% as much time as 1p1s version for 10000 points,
 #     however, operating on single points, it takes almost twice as much time as
 #     the single version.
 #     '''
-    
+
 #     p1, p2 = seg[0], seg[1]
-    
+
 #     # proj_on_lin is an array of all the points projected on the LINE of the segment
 #     V1, V2 = (pts - p1).astype(np.float), (p2 - p1).astype(np.float)
 #     p1_2_prj_dis = np.dot( V1 , V2 ) / ( (p1[0]-p2[0])**2 + (p1[1]-p2[1])**2 )
 #     proj_on_lin = segment[0] + V2 * np.atleast_2d(p1_2_prj_dis).T
-    
+
 #     # check if points projected on line are inside the segment's inteval
 #     xMin, xMax = min([p1[0], p2[0]]), max([p1[0], p2[0]])
 #     yMin, yMax = min([p1[1], p2[1]]), max([p1[1], p2[1]])
 #     eps = np.spacing(10)
-    
+
 #     p_in_seg_x = np.logical_and ( xMin-eps <= proj_on_lin[:,0], proj_on_lin[:,0] <= xMax+eps )
 #     p_in_seg_y = np.logical_and ( yMin-eps <= proj_on_lin[:,1], proj_on_lin[:,1] <= yMax+eps )
 #     p_in_seg = np.logical_and (p_in_seg_x, p_in_seg_y) # shape -> (pts.shape[0],)
 #     p_in_seg = np.atleast_2d( p_in_seg ).T # shape -> (pts.shape[0], 1)
-    
+
 #     # check the distance between peojected points and p1/p2 of the segement,
 #     # and pick the p1 or p2, which is closer to the point itseld,
 #     # ie. to take the ending point of segment as the projection point
@@ -1547,14 +1547,14 @@ def transfer_region_segmentation(src_image, dst_pathes, config, dst_image_shape=
 #     proj_dis_to_p2 = np.sqrt((p2_tile[:,0]-proj_on_lin[:,0])**2 + (p2_tile[:,1]-proj_on_lin[:,1])**2) # shape: (pts.shape[0],)
 #     cond = np.atleast_2d( proj_dis_to_p1<proj_dis_to_p2 ).T  # shape: (pts.shape[0],1)
 #     alternative = np.where(cond, p1_tile, p2_tile ) # shape: (pts.shape[0],2)
-    
+
 #     # if a projected point is inside the segment, return that as result,
 #     # otherwise return closest ending point from "alternative"
 #     px = np.where(p_in_seg, proj_on_lin, alternative)  # shape: (pts.shape[0],2)
 #     pts2seg_dis = np.sqrt((pts[:,0]-px[:,0])**2 + (pts[:,1]-px[:,1])**2)
-    
+
 #     return pts2seg_dis
- 
+
 # ################################################################################
 # def point2segment_distance_mpms(segments, pts):
 #     '''
@@ -1562,11 +1562,11 @@ def transfer_region_segmentation(src_image, dst_pathes, config, dst_image_shape=
 #     # for all stacked arrays: ax0-pts[idx] / ax1-seg[idx] / ax2-xy[idx]
 #     pts_stacked = np.stack( [pts for _ in range(segments.shape[0])] ,axis=1)
 #     p1s_stacked = np.stack( [segments[:,0,:] for _ in range(pts.shape[0])] ,axis=0)
-#     p2s_stacked = np.stack( [segments[:,1,:] for _ in range(pts.shape[0])] ,axis=0) 
-    
+#     p2s_stacked = np.stack( [segments[:,1,:] for _ in range(pts.shape[0])] ,axis=0)
+
 #     V1 = (pts_stacked - p1s_stacked).astype(np.float)
 #     V2 = (p2s_stacked - p1s_stacked).astype(np.float)
-    
+
 #     V1_dot_V2 = V1[:,:,0]*V2[:,:,0] + V1[:,:,1]*V2[:,:,1]
 #     del V1
 #     seg_len_sqr = (segments[:,0,0]-segments[:,1,0])**2 + (segments[:,0,1]-segments[:,1,1])**2
@@ -1580,7 +1580,7 @@ def transfer_region_segmentation(src_image, dst_pathes, config, dst_image_shape=
 #     xMax = np.stack([p1s_stacked[:,:,0], p2s_stacked[:,:,0]], axis=2).max(axis=2) + np.spacing(100)
 #     yMin = np.stack([p1s_stacked[:,:,1], p2s_stacked[:,:,1]], axis=2).min(axis=2) - np.spacing(100)
 #     yMax = np.stack([p1s_stacked[:,:,1], p2s_stacked[:,:,1]], axis=2).max(axis=2) + np.spacing(100)
-    
+
 #     p_in_seg_x = np.logical_and ( xMin <= proj_on_lin[:,:,0], proj_on_lin[:,:,0] <= xMax )
 #     p_in_seg_y = np.logical_and ( yMin <= proj_on_lin[:,:,1], proj_on_lin[:,:,1] <= yMax )
 #     p_in_seg = np.logical_and (p_in_seg_x, p_in_seg_y) # shape -> (pts.shape[0],)
@@ -1601,12 +1601,9 @@ def transfer_region_segmentation(src_image, dst_pathes, config, dst_image_shape=
 #     # otherwise return closest ending point from "alternative"
 #     px = np.where(p_in_seg, proj_on_lin, alternative)  # shape: (pts.shape[0],2)
 #     del p_in_seg, proj_on_lin, alternative
-    
+
 #     pts2seg_dis = np.sqrt((pts_stacked[:,:,0]-px[:,:,0])**2 + (pts_stacked[:,:,1]-px[:,:,1])**2)
 
 #     distance = pts2seg_dis.min(axis=1) # tried with .sum(axis=1), it goes crazy!
-    
+
 #     return distance
-
-
-

@@ -47,11 +47,11 @@ def plot_gradient_quiver(image, gradient, X=None, skp=20, save_to_file=False):
 
     if X is not None:
         axes.plot(X[:,0], X[:,1], 'r.')
-    
+
     X_q, Y_q = np.meshgrid(np.arange(image.shape[1]), np.arange(image.shape[0]))
     U_q, V_q = gradient.real, gradient.imag
     M_q = np.absolute(gradient) # == np.hypot(U, V)
-    
+
     axes.quiver(X_q[::skp, ::skp], Y_q[::skp, ::skp],
                 U_q[::skp, ::skp], V_q[::skp, ::skp],
                 M_q[::skp, ::skp],
@@ -82,7 +82,7 @@ def plot_dx_constrained(gradient, X, dX, dX_constrained):
     U_q, V_q = dX[:,0], dX[:,1]
     M_q = np.hypot(U_q, V_q)
     axes[0].quiver(X_q, Y_q, U_q, V_q, M_q, pivot='tail', scale= 50 * M_q.max() )
-    
+
     axes[1].set_title('without local constraint')
     axes[1].imshow(np.absolute(gradient), cmap='gray', alpha=1., interpolation='nearest', origin='lower')
     axes[1].plot(X[:,0], X[:,1], 'r,')
@@ -100,7 +100,7 @@ def plot_dx_constrained(gradient, X, dX, dX_constrained):
 def plot_point_before_after_optimization(gradient, X0,X1, axes=None, img_alpha=0.5, set_title=True):
     ''''''
     internal_plot = True if axes is None else False
-    
+
     if internal_plot:
         fig, axes = plt.subplots(1,1, figsize=(20,12))
 
@@ -116,7 +116,7 @@ def plot_point_before_after_optimization(gradient, X0,X1, axes=None, img_alpha=0
         plt.show()
     else:
         return axes
-    
+
 
 ################################################################################
 def plot_aligned_optimized(dst_image,
@@ -126,11 +126,11 @@ def plot_aligned_optimized(dst_image,
     OBSOLETE: use plot_alignment_motion_optimized() instead
     '''
     fig, axes = plt.subplots(1,2, figsize=(20,12))
-    
+
     axes[0].set_title(' alignment result ')
     axes[0].imshow(dst_image, origin='lower', cmap='gray', alpha=.5, clip_on=True)
     axes[0].imshow(src_image_aligned, origin='lower', cmap='gray', alpha=.5, clip_on=True)
-    
+
     axes[1].set_title(' optimization result ')
     axes[1].imshow(dst_image, origin='lower', cmap='gray', alpha=.5, clip_on=True)
     axes[1].imshow(src_image_optimized, origin='lower', cmap='gray', alpha=.5, clip_on=True)
@@ -150,11 +150,11 @@ def plot_alignment_motion_optimized(dst_image, src_img_aligned, src_img_optimize
                                     save_to_file):
     ''''''
     fig, axes = plt.subplots(1,3, figsize=(20,12))
-    
+
     axes[0].set_title(' alignment result ')
     axes[0].imshow(dst_image, origin='lower', cmap='gray', alpha=.5, clip_on=True)
     axes[0].imshow(src_img_aligned, origin='lower', cmap='gray', alpha=.5, clip_on=True)
-    
+
     axes[1].set_title(' point motion over gradient field ')
     axes[1] = plot_point_before_after_optimization(gradient_map, X_aligned, X_optimized, axes=axes[1], img_alpha=0.5)
 
@@ -181,7 +181,7 @@ def plot_triangualtion_of_PiecewiseAffineTransform(dst_image,
     fig, axes = plt.subplots(1,1, figsize=(12,12))
 
     axes.imshow(dst_image, origin='lower', cmap='gray', alpha=.5, clip_on=True)
-   
+
     axes.triplot(pwa_tform._tesselation.points[:,0],
                  pwa_tform._tesselation.points[:,1],
                  pwa_tform._tesselation.simplices.copy(), 'b,-')
@@ -202,7 +202,7 @@ def plot_tesselation_motion_heatmap(dst_image, src_img_aligned,
     tri_motion = np.array([ np.sqrt( ((X_aligned[idx,:]-X_optimized[idx,:])**2).sum(axis=1) ).sum()
                               for idx in tform_opt._tesselation.simplices ]) / 3
 
-    
+
     fig, axes = plt.subplots(1,2, figsize=(20,12))
 
     axes[0].set_title('histogram of the motion of the vertices of triangles')
@@ -210,7 +210,7 @@ def plot_tesselation_motion_heatmap(dst_image, src_img_aligned,
 
     # normalizing the motions to (0, .5) to be used for opacity of patches
     tri_motion = (tri_motion - tri_motion.min()) / ( 2* (tri_motion.max()-tri_motion.min()) )
-    
+
     axes[1].set_title('based on the motion of the vertices of each triangle')
     axes[1].imshow(dst_image, origin='lower', cmap='gray', alpha=.5)
     axes[1].imshow(src_img_aligned, origin='lower', cmap='gray', alpha=.5)
@@ -230,7 +230,7 @@ def plot_tesselation_motion_heatmap(dst_image, src_img_aligned,
 
     # tri_fitness = np.array([ fit_map[X_aligned[idx,1].astype(int), X_aligned[idx,0].astype(int)].sum() / 3.
     #                          for idx in tform_opt._tesselation.simplices ])
-    # tri_fitness = (tri_fitness - tri_fitness.min()) / (tri_fitness.max()-tri_fitness.min())    
+    # tri_fitness = (tri_fitness - tri_fitness.min()) / (tri_fitness.max()-tri_fitness.min())
     # axes[0].set_title('based on the fitness of the vertices of each triangle')
     # axes[0].imshow(dst_results['image'], origin='lower', cmap='gray', alpha=.5, clip_on=True)
     # axes[0].imshow(src_img_aligned, origin='lower', cmap='gray', alpha=.5, clip_on=True)
@@ -258,9 +258,9 @@ def plot_double_fitness(src_img, dst_img, tform_align, tform_opt, fitness_sigma=
     src_fit, dst_fit, X_src, X_dst = optali.double_fitness(src_img, dst_img, tform_align, tform_opt,
                                                            fitness_sigma=fitness_sigma,
                                                            src_contour_dilate_itr=20)
-    
+
     fig, axes = plt.subplots(1,2, figsize=(20,10))
-    
+
     # axes[0].imshow(src_img, origin='lower', cmap='gray', alpha=.8)
     axes[0].imshow(src_fit_map, origin='lower', cmap='gray', alpha=.8)
     axes[0].plot(X_dst['in_src_frame'][:,0], X_dst['in_src_frame'][:,1], 'r,', alpha=1)
@@ -268,7 +268,7 @@ def plot_double_fitness(src_img, dst_img, tform_align, tform_opt, fitness_sigma=
     rgba_colors[:, 1] = 1.0
     rgba_colors[:, 3] = dst_fit
     axes[0].scatter(X_dst['in_src_frame'][:,0], X_dst['in_src_frame'][:,1], marker=',', color=rgba_colors)
-    
+
     # axes[1].imshow(dst_img, origin='lower', cmap='gray', alpha=.8)
     axes[1].imshow(dst_fit_map, origin='lower', cmap='gray', alpha=.8)
     axes[1].plot(X_src['in_dst_frame'][:,0], X_src['in_dst_frame'][:,1], 'r,', alpha=1)
@@ -276,7 +276,7 @@ def plot_double_fitness(src_img, dst_img, tform_align, tform_opt, fitness_sigma=
     rgba_colors[:, 1] = 1.0
     rgba_colors[:, 3] = src_fit
     axes[1].scatter(X_src['in_dst_frame'][:,0], X_src['in_dst_frame'][:,1], marker=',', color=rgba_colors)
-    
+
     plt.tight_layout()
     plt.show()
 
@@ -285,9 +285,9 @@ def plot_motion_decoherency(dst_img, tform_opt, X_aligned, X_optimized, X_correl
     ''''''
 
     md = optali.get_motion_decoherency(tform_opt, X_aligned, X_optimized, X_correlation)
-        
+
     fig, axes = plt.subplots(1,1, figsize=(10,10))
-    
+
     axes.imshow(dst_img, origin='lower', cmap='gray', alpha=.8)
 
     axes.plot(X_aligned[:,0], X_aligned[:,1], 'b,', alpha=1)
@@ -299,7 +299,7 @@ def plot_motion_decoherency(dst_img, tform_opt, X_aligned, X_optimized, X_correl
     rgba_colors[:, 0] = 1.0
     rgba_colors[:, 3] = md/md.max()
     axes.scatter(X_optimized[:,0], X_optimized[:,1], marker=',', color=rgba_colors)
-    
+
     plt.tight_layout()
     plt.show()
 
@@ -307,9 +307,9 @@ def plot_motion_decoherency(dst_img, tform_opt, X_aligned, X_optimized, X_correl
 ################################################################################
 def plot_pathes(axes, pathes):
     ''''''
-    
+
     # ### plot patches with collection tool
-    # patches = [mpatches.PathPatch(p) for p in pathes]        
+    # patches = [mpatches.PathPatch(p) for p in pathes]
     # collection = mcollections.PatchCollection(patches, cmap=plt.cm.hsv, alpha=0.7)
     # colors = np.linspace(0, 1, len(pathes))
     # collection.set_array(np.array(colors))

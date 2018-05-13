@@ -60,7 +60,7 @@ def _extract_target_file_name(img_src, img_dst, method=None):
 
 
 ################################################################################
-################################################################################ 
+################################################################################
 ################################################################################
 if __name__ == '__main__':
     '''
@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
     ###### fetching parameters from input arguments
     # parameters are marked with double dash,
-    # the value of a parameter is the next argument   
+    # the value of a parameter is the next argument
     listiterator = args[1:].__iter__()
     while 1:
         try:
@@ -105,7 +105,7 @@ if __name__ == '__main__':
             if item[:2] == '--':
                 exec(item[2:] + ' = next( listiterator )')
         except:
-            break   
+            break
 
     ##### setting defaults values for parameter
     if 'hyp_sel_metric' not in locals():
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     ############### Alignment Configurations
     ########################################
 
-    ########## lock and load    
+    ########## lock and load
     lnl_config = {'binary_threshold_1': 200, # with numpy - for SKIZ and distance
                   'binary_threshold_2': [100, 255], # with cv2 - for trait detection
                   'traits_from_file': False, # else provide yaml file name
@@ -157,31 +157,31 @@ if __name__ == '__main__':
     ########## image loading, SKIZ, distance transform and trait detection
     src_results, src_lnl_t = mapali._lock_n_load(img_src, lnl_config)
     dst_results, dst_lnl_t = mapali._lock_n_load(img_dst, lnl_config)
-    
+
     ########## arrangement and pruning
     src_results['arrangement'], src_arr_t = mapali._construct_arrangement(src_results, arr_config)
     dst_results['arrangement'], dst_arr_t = mapali._construct_arrangement(dst_results, arr_config)
-   
+
     ########## Tform_Align generation
     tforms, hyp_gen_t, tforms_total, tforms_after_reject = mapali._generate_hypothese(src_results['arrangement'],
                                                                                       src_results['image'].shape,
                                                                                       dst_results['arrangement'],
                                                                                       dst_results['image'].shape,
                                                                                       hyp_config)
-    
+
     if tforms.shape[0] == 0:
         raise( Exception('map alignment failed, nothing to optimize...') )
         # print ('no tform survived ... setting to identity... ')
         # tform_align = skimage.transform.AffineTransform()
         # n_cluster, sel_win_t = 0, 0
-    
-        
+
+
     ########## pick the winning tform_align
     if hyp_sel_metric == 'matchscore': # with arrangement match score
         tform_align, n_cluster, sel_win_t = mapali._select_winning_hypothesis(src_results['arrangement'],
                                                                               dst_results['arrangement'],
                                                                               tforms, sel_config)
-        
+
     elif hyp_sel_metric == 'fitness': # with fitness match score
         X_original = optali.get_corner_sample(src_results['image'], maxCorners=500, qualityLevel=0.01, minDistance=25)
         ### construction of MOTION FIELD (of the destination map)
@@ -194,7 +194,7 @@ if __name__ == '__main__':
         n_points = X_original.shape[0]
         tic = time.time()
         fn = [ optali.estimate_fitness(tf._apply_mat(X_original, tf.params), fit_map).mean() for tf in tforms ]
-        
+
         import operator
         index, value = max(enumerate(fn), key=operator.itemgetter(1))
         tform_align = tforms[index]
@@ -204,11 +204,11 @@ if __name__ == '__main__':
         raise( Exception('unknown value for hyp_sel_metric') )
 
     arr_match_score = mapali._arrangement_match_score(src_results['arrangement'], dst_results['arrangement'], tform_align)
-    
+
     ########################################
     ###################### reporting results
     ########################################
-    mapali_details = { 
+    mapali_details = {
         'src_lnl_t': src_lnl_t,
         'dst_lnl_t': dst_lnl_t,
         'src_arr_t': src_arr_t,
@@ -223,29 +223,29 @@ if __name__ == '__main__':
     ########## print the elapsed time
     time_key = ['src_lnl_t', 'dst_lnl_t', 'src_arr_t', 'dst_arr_t', 'hyp_gen_t']
     print ('total alignment time: {:.5f}'.format( np.array([mapali_details[key] for key in time_key]).sum() ) )
-    
+
     ################################################################################
     ####################################### SECOND STAGE - OPTIMIZATION OF ALIGNMENT
     ################################################################################
     opt_config = {
-        # dst 
+        # dst
         'fitness_sigma': 50,
         'gradient_ksize': 3,
         'correlation_sigma': 800,
-        
+
         # src - good feature to track
         'edge_refine_dilate_itr': 5, #3
         'max_corner': 500,
         'quality_level': .01,
         'min_distance': 25,
-        
+
         # optimization - loop
         'opt_rate': 10**1,          # optimization rate
         'max_itr': 10000,           # maximum number of iterations
         'tol_fit': .9999, #.99        # break if (fitness > tol_fit)
     }
     opt_config['tol_mot'] = 0.001 # * opt_config['opt_rate'] # break if (max_motion < tol_mot)
-    
+
     ########################################
     ########## POINT SAMPLING occupied cells (of the source image)
     ########################################
@@ -297,7 +297,7 @@ if __name__ == '__main__':
         src_img_aligned = skimage.transform.warp(src_results['image'], tform_align.inverse, #_inv_matrix,
                                                  output_shape=(dst_results['image'].shape),
                                                  preserve_range=True, mode='constant', cval=127)
-        
+
         # warp aligned source image according to optimization
         src_img_optimized = skimage.transform.warp(src_img_aligned, tform_opt.inverse,
                                                    output_shape=(dst_results['image'].shape),
@@ -308,7 +308,7 @@ if __name__ == '__main__':
         optplt.plot_alignment_motion_optimized(dst_results['image'],
                                                src_img_aligned, src_img_optimized, grd_map,
                                                X_aligned, X_optimized, save_to_file)
-    
+
     if save_to_file:
         ########## saving results in a numpy file
         np.save(save_to_file+'.npy',
